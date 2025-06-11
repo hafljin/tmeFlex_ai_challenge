@@ -3,9 +3,11 @@ import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { TimerSession } from '@/types';
 import { useSettings } from './useSettings';
+import { useNotifications } from './useNotifications';
 
 export function useTimer(initialDuration: number = 0) {
   const { soundEnabled, vibrationEnabled } = useSettings();
+  const { triggerTimerAlert } = useNotifications();
   const [session, setSession] = useState<TimerSession>({
     id: Date.now().toString(),
     mode: 'countdown',
@@ -16,19 +18,12 @@ export function useTimer(initialDuration: number = 0) {
     createdAt: new Date().toISOString(),
   });
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const triggerAlert = useCallback(() => {
-    // Visual feedback (handled by component)
-    
-    // Haptic feedback
-    if (vibrationEnabled && Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    }
-
-    // TODO: Sound alert would be implemented here with expo-av
-    // For now, we'll just use haptic feedback
-  }, [vibrationEnabled]);
+  const triggerAlert = useCallback(async () => {
+    // 通知アラート
+    await triggerTimerAlert();
+  }, [triggerTimerAlert]);
 
   const tick = useCallback(() => {
     setSession(prev => {

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Volume2, VolumeX, Smartphone, Moon, Sun } from 'lucide-react-native';
+import { Volume2, VolumeX, Smartphone, Moon, Sun, Bell } from 'lucide-react-native';
 import { useSettings } from '@/hooks/useSettings';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function SettingsScreen() {
   const { 
@@ -14,8 +15,19 @@ export default function SettingsScreen() {
     toggleVibration 
   } = useSettings();
   
+  const { triggerTimerAlert } = useNotifications();
+  
   const isDark = theme === 'dark';
   const styles = createStyles(isDark);
+
+  const handleTestNotification = async () => {
+    try {
+      await triggerTimerAlert('Test notification from TimeFlex!');
+      Alert.alert('Success', 'Test notification sent!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send test notification');
+    }
+  };
 
   const SettingItem = ({ 
     icon, 
@@ -83,6 +95,16 @@ export default function SettingsScreen() {
             value={vibrationEnabled}
             onToggle={toggleVibration}
           />
+          
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={handleTestNotification}
+          >
+            <View style={styles.testButtonContent}>
+              <Bell size={20} color="#6366f1" />
+              <Text style={styles.testButtonText}>Test Notification</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.about}>
@@ -189,5 +211,23 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Roboto-Regular',
     color: isDark ? '#6b7280' : '#9ca3af',
+  },
+  testButton: {
+    backgroundColor: isDark ? '#374151' : '#f3f4f6',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  testButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  testButtonText: {
+    fontSize: 16,
+    fontFamily: 'Roboto-Medium',
+    color: isDark ? '#ffffff' : '#1f2937',
+    marginLeft: 8,
   },
 });
