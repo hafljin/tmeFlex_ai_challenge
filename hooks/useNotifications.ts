@@ -123,9 +123,11 @@ export function useNotifications() {
     return () => {
       // クリーンアップ
       if (notificationListener.current) {
+        // @ts-ignore - removeNotificationSubscription is deprecated but still works
         Notifications.removeNotificationSubscription(notificationListener.current);
       }
       if (responseListener.current) {
+        // @ts-ignore - removeNotificationSubscription is deprecated but still works
         Notifications.removeNotificationSubscription(responseListener.current);
       }
     };

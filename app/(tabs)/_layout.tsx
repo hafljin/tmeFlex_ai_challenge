@@ -1,11 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Timer, Settings } from 'lucide-react-native';
-import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
-  const { theme } = useSettings();
+  const { isDark } = useTheme();
   
-  const isDark = theme === 'dark';
   const backgroundColor = isDark ? '#1a1a1a' : '#ffffff';
   const activeColor = '#6366f1';
   const inactiveColor = isDark ? '#9ca3af' : '#6b7280';
@@ -19,7 +18,8 @@ export default function TabLayout() {
           borderTopColor: isDark ? '#374151' : '#e5e7eb',
           paddingBottom: 8,
           paddingTop: 8,
-          height: 70,
+          height: 80,
+          paddingHorizontal: 0,
         },
         tabBarActiveTintColor: activeColor,
         tabBarInactiveTintColor: inactiveColor,
@@ -27,6 +27,10 @@ export default function TabLayout() {
           fontFamily: 'Roboto-Medium',
           fontSize: 12,
           marginTop: 4,
+          marginBottom: 0,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
         },
       }}>
       <Tabs.Screen

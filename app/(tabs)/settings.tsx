@@ -1,124 +1,10 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Volume2, VolumeX, Smartphone, Moon, Sun, Bell } from 'lucide-react-native';
 import { useSettings } from '@/hooks/useSettings';
 import { useNotifications } from '@/hooks/useNotifications';
-
-export default function SettingsScreen() {
-  const { 
-    theme, 
-    soundEnabled, 
-    vibrationEnabled, 
-    toggleTheme, 
-    toggleSound, 
-    toggleVibration 
-  } = useSettings();
-  
-  const { triggerTimerAlert } = useNotifications();
-  
-  const isDark = theme === 'dark';
-  const styles = createStyles(isDark);
-
-  const handleTestNotification = async () => {
-    try {
-      await triggerTimerAlert('Test notification from TimeFlex!');
-      Alert.alert('Success', 'Test notification sent!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send test notification');
-    }
-  };
-
-  const SettingItem = ({ 
-    icon, 
-    title, 
-    description, 
-    value, 
-    onToggle 
-  }: {
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-    value: boolean;
-    onToggle: () => void;
-  }) => (
-    <View style={styles.settingItem}>
-      <View style={styles.settingLeft}>
-        <View style={styles.iconContainer}>
-          {icon}
-        </View>
-        <View style={styles.settingContent}>
-          <Text style={styles.settingTitle}>{title}</Text>
-          <Text style={styles.settingDescription}>{description}</Text>
-        </View>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#6366f1' }}
-        thumbColor={value ? '#ffffff' : isDark ? '#9ca3af' : '#f3f4f6'}
-      />
-    </View>
-  );
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-          <SettingItem
-            icon={isDark ? <Moon size={24} color="#6366f1" /> : <Sun size={24} color="#6366f1" />}
-            title="Dark Mode"
-            description="Use dark theme throughout the app"
-            value={isDark}
-            onToggle={toggleTheme}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          <SettingItem
-            icon={soundEnabled ? <Volume2 size={24} color="#6366f1" /> : <VolumeX size={24} color="#6366f1" />}
-            title="Sound Alerts"
-            description="Play sound when timer ends"
-            value={soundEnabled}
-            onToggle={toggleSound}
-          />
-          <SettingItem
-            icon={<Smartphone size={24} color="#6366f1" />}
-            title="Vibration"
-            description="Vibrate when timer ends"
-            value={vibrationEnabled}
-            onToggle={toggleVibration}
-          />
-          
-          <TouchableOpacity
-            style={styles.testButton}
-            onPress={handleTestNotification}
-          >
-            <View style={styles.testButtonContent}>
-              <Bell size={20} color="#6366f1" />
-              <Text style={styles.testButtonText}>Test Notification</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.about}>
-          <Text style={styles.aboutTitle}>About TimeFlex</Text>
-          <Text style={styles.aboutText}>
-            A simple and intuitive timer app for better time management. 
-            Perfect for Pomodoro sessions, workouts, cooking, and meditation.
-          </Text>
-          <Text style={styles.version}>Version 1.0.0</Text>
-        </View>
-      </View>
-    </SafeAreaView>
-  );
-}
+import { useTheme } from '@/contexts/ThemeContext';
 
 const createStyles = (isDark: boolean) => StyleSheet.create({
   container: {
@@ -139,6 +25,11 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+  settingsContainer: {
+    flex: 0,
+    marginBottom: 16,
   },
   section: {
     marginBottom: 32,
@@ -192,7 +83,6 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderRadius: 12,
-    marginTop: 16,
   },
   aboutTitle: {
     fontSize: 18,
@@ -218,7 +108,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 8,
   },
   testButtonContent: {
     flexDirection: 'row',
@@ -230,4 +120,187 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     color: isDark ? '#ffffff' : '#1f2937',
     marginLeft: 8,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Roboto-Medium',
+    color: isDark ? '#ffffff' : '#1f2937',
+  },
 });
+
+// 独立した設定項目コンポーネント
+const SettingItem = memo(({ 
+  icon, 
+  title, 
+  description, 
+  value, 
+  onToggle,
+  isDark 
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  value: boolean;
+  onToggle: () => void;
+  isDark: boolean;
+}) => {
+  const styles = createStyles(isDark);
+  
+  const handleToggle = () => {
+    console.log(`Toggling ${title}: ${value} -> ${!value}`);
+    onToggle();
+  };
+
+  return (
+    <View style={styles.settingItem}>
+      <View style={styles.settingLeft}>
+        <View style={styles.iconContainer}>
+          {icon}
+        </View>
+        <View style={styles.settingContent}>
+          <Text style={styles.settingTitle}>{title}</Text>
+          <Text style={styles.settingDescription}>{description}</Text>
+        </View>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={handleToggle}
+        trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#6366f1' }}
+        thumbColor={value ? '#ffffff' : isDark ? '#9ca3af' : '#f3f4f6'}
+      />
+    </View>
+  );
+});
+
+// Dark Mode設定コンポーネント
+const DarkModeSetting = memo(() => {
+  const { isDark, toggleTheme, isLoaded } = useTheme();
+  
+  if (!isLoaded) return null;
+  
+  return (
+    <SettingItem
+      icon={isDark ? <Moon size={24} color="#6366f1" /> : <Sun size={24} color="#6366f1" />}
+      title="Dark Mode"
+      description="Use dark theme throughout the app"
+      value={isDark}
+      onToggle={toggleTheme}
+      isDark={isDark}
+    />
+  );
+});
+
+// Sound Alerts設定コンポーネント
+const SoundAlertsSetting = memo(() => {
+  const { soundEnabled, toggleSound, isLoaded } = useSettings();
+  const { isDark } = useTheme();
+  
+  if (!isLoaded) return null;
+  
+  return (
+    <SettingItem
+      icon={soundEnabled ? <Volume2 size={24} color="#6366f1" /> : <VolumeX size={24} color="#6366f1" />}
+      title="Sound Alerts"
+      description="Play sound when timer ends"
+      value={soundEnabled}
+      onToggle={toggleSound}
+      isDark={isDark}
+    />
+  );
+});
+
+// Vibration設定コンポーネント
+const VibrationSetting = memo(() => {
+  const { vibrationEnabled, toggleVibration, isLoaded } = useSettings();
+  const { isDark } = useTheme();
+  
+  if (!isLoaded) return null;
+  
+  return (
+    <SettingItem
+      icon={<Smartphone size={24} color="#6366f1" />}
+      title="Vibration"
+      description="Vibrate when timer ends"
+      value={vibrationEnabled}
+      onToggle={toggleVibration}
+      isDark={isDark}
+    />
+  );
+});
+
+export default function SettingsScreen() {
+  const { isDark, isLoaded: themeLoaded } = useTheme();
+  const { isLoaded: settingsLoaded } = useSettings();
+  const { triggerTimerAlert } = useNotifications();
+  
+  const styles = createStyles(isDark);
+  const isLoaded = themeLoaded && settingsLoaded;
+
+  const handleTestNotification = async () => {
+    try {
+      await triggerTimerAlert('Test notification from TimeFlex!');
+      Alert.alert('Success', 'Test notification sent!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send test notification');
+    }
+  };
+
+  if (!isLoaded) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Settings</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading settings...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Settings</Text>
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.settingsContainer}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Appearance</Text>
+            <DarkModeSetting />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Notifications</Text>
+            <SoundAlertsSetting />
+            <VibrationSetting />
+            
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={handleTestNotification}
+            >
+              <View style={styles.testButtonContent}>
+                <Bell size={20} color="#6366f1" />
+                <Text style={styles.testButtonText}>Test Notification</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.about}>
+          <Text style={styles.aboutTitle}>About TimeFlex</Text>
+          <Text style={styles.aboutText}>
+            A simple and intuitive timer app for better time management. 
+            Perfect for Pomodoro sessions, workouts, cooking, and meditation.
+          </Text>
+          <Text style={styles.version}>Version 1.0.0</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}

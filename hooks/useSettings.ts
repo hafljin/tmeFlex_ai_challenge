@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Settings } from '@/types';
 
+const SETTINGS_STORAGE_KEY = '@timeflex_settings';
+
 const defaultSettings: Settings = {
-  theme: 'dark',
   soundEnabled: true,
   vibrationEnabled: true,
 };
@@ -10,31 +12,70 @@ const defaultSettings: Settings = {
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  // 設定の読み込み
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const storedSettings = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (storedSettings) {
+        const parsedSettings = JSON.parse(storedSettings);
+        setSettings({ ...defaultSettings, ...parsedSettings });
+      }
+    } catch (error) {
+      console.log('Error loading settings:', error);
+    } finally {
+      setIsLoaded(true);
+    }
   };
 
-  const toggleTheme = () => {
-    updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark');
+  const saveSettings = async (newSettings: Settings) => {
+    try {
+      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+    } catch (error) {
+      console.log('Error saving settings:', error);
+    }
   };
 
-  const toggleSound = () => {
-    updateSetting('soundEnabled', !settings.soundEnabled);
-  };
+  const updateSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
+    setSettings(prevSettings => {
+      const newSettings = { ...prevSettings, [key]: value };
+      // 非同期で保存（状態更新をブロックしない）
+      saveSettings(newSettings);
+      return newSettings;
+    });
+  }, []);
 
-  const toggleVibration = () => {
-    updateSetting('vibrationEnabled', !settings.vibrationEnabled);
-  };
+  const toggleSound = useCallback(() => {
+    setSettings(prevSettings => {
+      const newSoundEnabled = !prevSettings.soundEnabled;
+      const newSettings = { ...prevSettings, soundEnabled: newSoundEnabled };
+      saveSettings(newSettings);
+      return newSettings;
+    });
+  }, []);
 
-  const setHeaderVisible = (visible: boolean) => {
+  const toggleVibration = useCallback(() => {
+    setSettings(prevSettings => {
+      const newVibrationEnabled = !prevSettings.vibrationEnabled;
+      const newSettings = { ...prevSettings, vibrationEnabled: newVibrationEnabled };
+      saveSettings(newSettings);
+      return newSettings;
+    });
+  }, []);
+
+  const setHeaderVisible = useCallback((visible: boolean) => {
     setIsHeaderVisible(visible);
-  };
+  }, []);
 
   return {
     ...settings,
     isHeaderVisible,
-    toggleTheme,
+    isLoaded,
     toggleSound,
     toggleVibration,
     setHeaderVisible,

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Modal } from 'react-native';
-import { Clock } from 'lucide-react-native';
+import { Clock, X, Check } from 'lucide-react-native';
 import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface TimeInputProps {
   onTimeSet: (seconds: number) => void;
@@ -16,7 +17,8 @@ export default function TimeInput({ onTimeSet }: TimeInputProps) {
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  const { theme, setHeaderVisible } = useSettings();
+  const { setHeaderVisible } = useSettings();
+  const { isDark } = useTheme();
   
   const hoursScrollRef = useRef<ScrollView>(null);
   const minutesScrollRef = useRef<ScrollView>(null);
@@ -25,7 +27,6 @@ export default function TimeInput({ onTimeSet }: TimeInputProps) {
   // スクロール位置の更新を制御するフラグ
   const [isUpdatingScroll, setIsUpdatingScroll] = useState(false);
   
-  const isDark = theme === 'dark';
   const styles = createStyles(isDark);
 
   // ピッカー表示時にヘッダーを非表示にする
@@ -119,6 +120,9 @@ export default function TimeInput({ onTimeSet }: TimeInputProps) {
     );
   }
 
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+  const canSet = totalSeconds > 0;
+
   return (
     <Modal
       visible={showPicker}
@@ -126,13 +130,21 @@ export default function TimeInput({ onTimeSet }: TimeInputProps) {
       animationType="fade"
       onRequestClose={handleCancel}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.pickerContainer}>
+      <TouchableOpacity 
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={handleCancel}
+      >
+        <TouchableOpacity 
+          style={styles.pickerContainer}
+          activeOpacity={1}
+          onPress={() => {}}
+        >
           <Text style={styles.pickerLabel}>Set Custom Time</Text>
           
           <View style={styles.timeDisplay}>
             <Text style={styles.timeText}>
-              {`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}
+              {formatTime(totalSeconds)}
             </Text>
           </View>
 
@@ -281,24 +293,38 @@ export default function TimeInput({ onTimeSet }: TimeInputProps) {
               style={[styles.pickerButton, styles.cancelButton]}
               onPress={handleCancel}
             >
+              <X size={16} color={isDark ? '#e5e7eb' : '#374151'} />
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
+            
             <TouchableOpacity
               style={[
                 styles.pickerButton, 
                 styles.setButton,
-                (hours === 0 && minutes === 0 && seconds === 0) && styles.disabledButton
+                !canSet && styles.disabledButton
               ]}
               onPress={handleTimeSet}
-              disabled={hours === 0 && minutes === 0 && seconds === 0}
+              disabled={!canSet}
             >
+              <Check size={16} color="#ffffff" />
               <Text style={styles.setButtonText}>Set</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
+}
+
+function formatTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 const createStyles = (isDark: boolean) => StyleSheet.create({
@@ -309,7 +335,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    marginBottom: 20,
+    marginTop: 8,
     borderWidth: 1,
     borderColor: '#6366f1',
   },

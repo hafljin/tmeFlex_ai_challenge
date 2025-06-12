@@ -9,7 +9,6 @@ export interface TimerSession {
 }
 
 export interface Settings {
-  theme: 'light' | 'dark';
   soundEnabled: boolean;
   vibrationEnabled: boolean;
 }

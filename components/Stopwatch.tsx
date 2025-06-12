@@ -1,20 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Play, Pause, RotateCcw } from 'lucide-react-native';
 import { useTimer } from '@/hooks/useTimer';
-import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatTime } from '@/utils/formatTime';
 
 export default function Stopwatch() {
-  const { theme } = useSettings();
-  const { session, start, pause, resume, reset, setMode } = useTimer();
+  const { isDark } = useTheme();
+  const { session, start, pause, resume, reset } = useTimer();
   
-  const isDark = theme === 'dark';
   const styles = createStyles(isDark);
-
-  React.useEffect(() => {
-    setMode('stopwatch');
-  }, [setMode]);
 
   const getMainButtonIcon = () => {
     if (session.isRunning && !session.isPaused) {
@@ -44,7 +39,7 @@ export default function Stopwatch() {
         <TouchableOpacity
           style={[styles.controlButton, styles.resetButton]}
           onPress={reset}
-          disabled={session.elapsedInSeconds === 0 && !session.isRunning && !session.isPaused}
+          disabled={!session.isRunning && !session.isPaused && session.elapsedInSeconds === 0}
         >
           <RotateCcw size={24} color={isDark ? '#ffffff' : '#1f2937'} />
         </TouchableOpacity>
@@ -59,15 +54,12 @@ export default function Stopwatch() {
         <View style={styles.spacer} />
       </View>
 
-      {(session.isRunning || session.isPaused || session.elapsedInSeconds > 0) && (
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusText}>
-            {session.isRunning && !session.isPaused && 'Running'}
-            {session.isPaused && 'Paused'}
-            {!session.isRunning && !session.isPaused && session.elapsedInSeconds > 0 && 'Stopped'}
-          </Text>
-        </View>
-      )}
+      <View style={styles.statusContainer}>
+        <Text style={styles.statusText}>
+          {session.isRunning && !session.isPaused ? 'Running' : 
+           session.isPaused ? 'Paused' : 'Stopped'}
+        </Text>
+      </View>
     </View>
   );
 }

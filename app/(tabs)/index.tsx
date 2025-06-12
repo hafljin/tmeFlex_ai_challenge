@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/contexts/ThemeContext';
 import CountdownTimer from '@/components/CountdownTimer';
 import Stopwatch from '@/components/Stopwatch';
 
 export default function HomeScreen() {
   const [mode, setMode] = useState<'countdown' | 'stopwatch'>('countdown');
-  const { theme, isHeaderVisible } = useSettings();
+  const { isHeaderVisible } = useSettings();
+  const { isDark } = useTheme();
   
-  const isDark = theme === 'dark';
   const styles = createStyles(isDark);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {isHeaderVisible && (
         <View style={styles.header}>
           <Text style={styles.title}>TimeFlex</Text>
@@ -78,9 +79,10 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: isDark ? '#1f2937' : '#e5e7eb',
+    backgroundColor: isDark ? '#1f2937' : '#ffffff',
     borderRadius: 12,
     padding: 4,
+    marginTop: 16,
   },
   modeButton: {
     flex: 1,
@@ -103,5 +105,6 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 20,
   },
 });

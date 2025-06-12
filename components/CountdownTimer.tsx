@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Play, Pause, RotateCcw } from 'lucide-react-native';
 import { useTimer } from '@/hooks/useTimer';
-import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/contexts/ThemeContext';
 import { formatTime } from '@/utils/formatTime';
 import TimeInput from './TimeInput';
 
 export default function CountdownTimer() {
-  const { theme } = useSettings();
+  const { isDark } = useTheme();
   const { session, start, pause, resume, reset, setDuration } = useTimer();
   const [flashAnim] = useState(new Animated.Value(0));
   
-  const isDark = theme === 'dark';
   const styles = createStyles(isDark);
 
   const timeRemaining = Math.max(0, session.durationInSeconds - session.elapsedInSeconds);
@@ -65,15 +64,18 @@ export default function CountdownTimer() {
     return start;
   };
 
-  const canStart = session.durationInSeconds > 0 && !isCompleted;
-
-  const backgroundColor = flashAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [isDark ? '#0f0f0f' : '#f8fafc', '#ef4444'],
-  });
+  const canStart = session.durationInSeconds > 0;
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor }]}>
+    <Animated.View 
+      style={[
+        styles.container,
+        { backgroundColor: flashAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [isDark ? '#0f0f0f' : '#f8fafc', '#ef4444']
+        })}
+      ]}
+    >
       <View style={styles.timeDisplay}>
         <Text style={styles.timeText}>
           {formatTime(timeRemaining)}
@@ -84,31 +86,48 @@ export default function CountdownTimer() {
       </View>
 
       {!session.isRunning && !session.isPaused && (
-        <TimeInput onTimeSet={handleTimeSet} />
-      )}
-
-      <View style={styles.presetButtons}>
-        {[
-          { label: '5 min', seconds: 300 },
-          { label: '10 min', seconds: 600 },
-          { label: '15 min', seconds: 900 },
-          { label: '25 min', seconds: 1500 },
-        ].map((preset) => (
+        <View style={styles.presetButtons}>
           <TouchableOpacity
-            key={preset.seconds}
             style={styles.presetButton}
-            onPress={() => handleTimeSet(preset.seconds)}
-            disabled={session.isRunning || session.isPaused}
+            onPress={() => handleTimeSet(60)} // 1 minute
           >
-            <Text style={[
-              styles.presetButtonText,
-              (session.isRunning || session.isPaused) && styles.disabledText
-            ]}>
-              {preset.label}
-            </Text>
+            <Text style={styles.presetButtonText}>1 min</Text>
           </TouchableOpacity>
-        ))}
-      </View>
+          <TouchableOpacity
+            style={styles.presetButton}
+            onPress={() => handleTimeSet(3 * 60)} // 3 minutes
+          >
+            <Text style={styles.presetButtonText}>3 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.presetButton}
+            onPress={() => handleTimeSet(5 * 60)} // 5 minutes
+          >
+            <Text style={styles.presetButtonText}>5 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.presetButton}
+            onPress={() => handleTimeSet(8 * 60)} // 8 minutes
+          >
+            <Text style={styles.presetButtonText}>8 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.presetButton}
+            onPress={() => handleTimeSet(10 * 60)} // 10 minutes
+          >
+            <Text style={styles.presetButtonText}>10 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.presetButton}
+            onPress={() => handleTimeSet(25 * 60)} // 25 minutes
+          >
+            <Text style={styles.presetButtonText}>25 min</Text>
+          </TouchableOpacity>
+          <View style={styles.customTimeContainer}>
+            <TimeInput onTimeSet={handleTimeSet} />
+          </View>
+        </View>
+      )}
 
       <View style={styles.controls}>
         <TouchableOpacity
@@ -188,9 +207,11 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     margin: 6,
+    width: 80,
+    alignItems: 'center',
   },
   presetButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'Roboto-Medium',
     color: isDark ? '#e5e7eb' : '#374151',
   },
@@ -252,5 +273,8 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     height: '100%',
     backgroundColor: '#6366f1',
     borderRadius: 3,
+  },
+  customTimeContainer: {
+    marginTop: 10,
   },
 });
